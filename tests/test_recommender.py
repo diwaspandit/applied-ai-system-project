@@ -85,7 +85,7 @@ def test_score_song_returns_score_and_reasons():
 
     assert score > 0
     assert "mood match (+3.0)" in reasons
-    assert "genre match (+2.0)" in reasons
+    assert "genre match (+1.0)" in reasons
     assert any("energy close to target" in reason for reason in reasons)
 
 
