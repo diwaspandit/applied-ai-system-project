@@ -11,23 +11,33 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+Real-world recommendation systems usually combine many signals at once: a user's past behavior, patterns from similar users, content features like genre or mood, and a ranking step that decides what to show first. My version is a much smaller, more transparent content-based simulation. Instead of learning from millions of listeners, it will prioritize musical "vibe" by rewarding mood and genre matches, songs whose energy is close to the user's target, and whether the song fits the user's acoustic preference.
 
 ---
 
 ## How The System Works
 
-Explain your design in plain language.
+This simulation uses a simple content-based recommender that compares each song's features to a small user taste profile and then ranks the best matches.
 
-Some prompts to answer:
+`Song` features used in the simulation:
+- `id`
+- `title`
+- `artist`
+- `genre`
+- `mood`
+- `energy`
+- `tempo_bpm`
+- `valence`
+- `danceability`
+- `acousticness`
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+`UserProfile` features used in the simulation:
+- `favorite_genre`
+- `favorite_mood`
+- `target_energy`
+- `likes_acoustic`
 
-You can include a simple diagram or bullet list if helpful.
+The recommender gives points when a song matches the user's favorite genre and mood, rewards songs whose `energy` is closer to the user's target energy, and can add a smaller bonus when the song's `acousticness` fits the user's acoustic preference. After every song gets a score, the system sorts the songs from highest to lowest score and recommends the top `k` songs.
 
 ---
 
@@ -208,4 +218,3 @@ A few sentences about what you learned:
 - What surprised you about how your system behaved
 - How did building this change how you think about real music recommenders
 - Where do you think human judgment still matters, even if the model seems "smart"
-
