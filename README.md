@@ -69,6 +69,10 @@ Potential bias note:
 - It may also over-recommend acoustic songs for users with `likes_acoustic = True`, even when a less acoustic track matches the mood better.
 - Because the catalog is small, underrepresented genres and moods may appear less often in the final recommendations.
 
+Sample recommendation output:
+
+![Recommendation output](recommendation_output.png)
+
 ---
 
 ## Getting Started
