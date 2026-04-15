@@ -37,7 +37,37 @@ This simulation uses a simple content-based recommender that compares each song'
 - `target_energy`
 - `likes_acoustic`
 
+Example taste profile dictionary:
+
+```python
+user_prefs = {
+    "favorite_genre": "lofi",
+    "favorite_mood": "focused",
+    "target_energy": 0.40,
+    "likes_acoustic": True,
+}
+```
+
 The recommender gives points when a song matches the user's favorite genre and mood, rewards songs whose `energy` is closer to the user's target energy, and can add a smaller bonus when the song's `acousticness` fits the user's acoustic preference. After every song gets a score, the system sorts the songs from highest to lowest score and recommends the top `k` songs.
+
+Algorithm recipe:
+- Read the user's taste profile from `user_prefs`
+- Load every song from `data/songs.csv`
+- For each song, calculate a score using:
+  - `+3` points if the mood matches
+  - `+2` points if the genre matches
+  - up to `+3` points for energy closeness using `1 - abs(song_energy - target_energy)`
+  - up to `+2` points for acoustic fit
+- Save each song with its final score
+- Sort all songs from highest score to lowest score
+- Return the top `k` songs as recommendations
+
+In this design, mood is weighted slightly more than genre because the system is trying to match overall vibe, not just musical category. A song from a different genre can still feel right if it matches the user's mood and energy.
+
+Potential bias note:
+- This system might over-prioritize exact mood or genre labels and miss good songs that feel similar in other ways.
+- It may also over-recommend acoustic songs for users with `likes_acoustic = True`, even when a less acoustic track matches the mood better.
+- Because the catalog is small, underrepresented genres and moods may appear less often in the final recommendations.
 
 ---
 
