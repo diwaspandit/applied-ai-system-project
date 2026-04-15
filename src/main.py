@@ -15,17 +15,35 @@ except ImportError:
     from recommender import load_songs, recommend_songs
 
 
+USER_PREFERENCE_PROFILES = {
+    "Chill Lofi": {
+        "favorite_genre": "lofi",
+        "favorite_mood": "chill",
+        "target_energy": 0.38,
+        "likes_acoustic": True,
+    },
+    "High-Energy Pop": {
+        "favorite_genre": "pop",
+        "favorite_mood": "happy",
+        "target_energy": 0.85,
+        "likes_acoustic": False,
+    },
+    "Deep Intense Rock": {
+        "favorite_genre": "rock",
+        "favorite_mood": "intense",
+        "target_energy": 0.90,
+        "likes_acoustic": False,
+    },
+}
+
+
 def main() -> None:
     songs = load_songs("data/songs.csv")
     print(f"Loaded songs: {len(songs)}")
 
-    # Example taste profile used for recommendations
-    user_prefs = {
-        "favorite_genre": "lofi",
-        "favorite_mood": "focused",
-        "target_energy": 0.40,
-        "likes_acoustic": True,
-    }
+    selected_profile = "Chill Lofi"
+    user_prefs = USER_PREFERENCE_PROFILES[selected_profile]
+    print(f"Using profile: {selected_profile}")
 
     recommendations = recommend_songs(user_prefs, songs, k=5)
 

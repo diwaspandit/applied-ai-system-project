@@ -71,7 +71,7 @@ Potential bias note:
 
 Sample recommendation output:
 
-![Recommendation output](recommendation_output.png)
+![Recommendation output](screenshots/recommendation_output.png)
 
 ---
 
@@ -117,6 +117,34 @@ Use this section to document the experiments you ran. For example:
 - What happened when you changed the weight on genre from 2.0 to 0.5
 - What happened when you added tempo or valence to the score
 - How did your system behave for different types of users
+
+## Adversarial Profile Runs
+
+I also tested several adversarial or edge-case user profiles to see whether the scoring logic could be pushed into unexpected recommendations. Each screenshot below shows the top 5 results printed in the terminal.
+
+### `Sad Sprint Pop`
+
+Conflicting preferences: high energy pop with a `sad` mood label that does not appear in the dataset.
+
+![Sad Sprint Pop terminal output](screenshots/sad-sprint-pop.png)
+
+### `Peaceful Mosh Pit`
+
+Conflicting preferences: peaceful acoustic rock with very high target energy.
+
+![Peaceful Mosh Pit terminal output](screenshots/peaceful-mosh-pit.png)
+
+### `Acoustic Metal Campfire`
+
+Conflicting preferences: metal, tender mood, low energy, and strong acoustic preference.
+
+![Acoustic Metal Campfire terminal output](screenshots/acoustic-metal-campfire.png)
+
+### `Overclocked EDM`
+
+Edge-case input: an out-of-range `target_energy` value of `1.50`.
+
+![Overclocked EDM terminal output](screenshots/overclocked-edm.png)
 
 ---
 
