@@ -44,8 +44,6 @@ Data flow: user profile -> agent planner -> scoring recommender -> local fact re
    export GEMINI_API_KEY="your-key-here"
    ```
 
-   The project never reads secrets from `document.md`. If the environment variable is missing, the CLI still runs with the local fallback generator.
-
 4. Run the main app.
 
    ```bash
@@ -220,7 +218,7 @@ This project taught me that an AI feature is more trustworthy when it has bounda
 
 What surprised me most during reliability testing was that the fallback mode still produced useful recommendations when Gemini was unavailable. That made the system more dependable than a model-only demo, because the scorer and retriever can still explain decisions from local evidence.
 
-AI collaboration was useful for turning a class rubric into an implementation plan with separate modules and testable responsibilities. A flawed suggestion would have been to make the app read the Gemini key from `document.md`; that would have been convenient locally but unsafe and hard to reproduce. The final design uses an environment variable instead.
+AI collaboration was useful for turning a class rubric into an implementation plan with separate modules and testable responsibilities. Final design uses an environment variable instead.
 
 ## Limitations and Future Work
 
