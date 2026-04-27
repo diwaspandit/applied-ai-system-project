@@ -61,6 +61,8 @@ python scripts/evaluate_recommender.py
 Passed 3 out of 3 cases
 ```
 
+The most surprising reliability result was that the deterministic fallback remained useful when Gemini was not available. Instead of failing the demo, the app still ranked songs, retrieved local facts, generated a grounded explanation, and clearly labeled the fallback guardrail.
+
 ## 8. Misuse Risks
 
 The main misuse risk is presenting a small classroom demo as a real recommendation engine. Another risk is making generated explanations sound more authoritative than the underlying data supports. To reduce that risk, the system cites local facts, labels guardrail behavior, avoids live-web claims, and keeps confidence visible.

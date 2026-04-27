@@ -63,6 +63,8 @@ Data flow: user profile -> scoring recommender -> local fact retriever -> Gemini
 
 ## Sample Interactions
 
+These examples can be reproduced with `python -m src.main` for the default profile and `python scripts/evaluate_recommender.py` for the three-profile reliability run. The sample output below was captured in fallback mode, which is expected when `GEMINI_API_KEY` is not loaded into the shell.
+
 ### Chill Lofi Profile
 
 Input profile:
@@ -100,7 +102,16 @@ Input profile:
 }
 ```
 
-Expected behavior: `Sunrise City` is recommended near the top because it matches happy pop, high energy, and less-acoustic production. The RAG layer cites local facts about Neon Echo and the song's upbeat electronic-pop style.
+Example output:
+
+```text
+Sunrise City by Neon Echo - Score: 11.06
+Ranking signals: mood match (+3.0), genre match (+1.0), energy close to target (+5.8), matches less-acoustic preference (+1.6)
+RAG explanation: Sunrise City fits the happy pop profile because the scorer found a strong mood, genre, energy, and less-acoustic match, and the local catalog describes it as bright electronic pop.
+Confidence: 0.62 | Generator: local-fallback
+Citations: local fictional catalog notes
+Guardrails: GEMINI_API_KEY is not set
+```
 
 ### Deep Intense Rock Profile
 
@@ -115,7 +126,16 @@ Input profile:
 }
 ```
 
-Expected behavior: `Storm Runner` is recommended because the scoring layer sees a strong rock, intense, high-energy match, and the retriever supplies facts about Voltline's driving tempo and sharp-guitar catalog identity.
+Example output:
+
+```text
+Storm Runner by Voltline - Score: 11.74
+Ranking signals: mood match (+3.0), genre match (+1.0), energy close to target (+5.9), matches less-acoustic preference (+1.8)
+RAG explanation: Storm Runner fits the intense rock profile because the scorer found high energy and low acousticness, while the local catalog describes Voltline as a sharp-guitar rock act with driving tempos.
+Confidence: 0.62 | Generator: local-fallback
+Citations: local fictional catalog notes
+Guardrails: GEMINI_API_KEY is not set
+```
 
 ## Design Decisions
 
@@ -154,9 +174,20 @@ Passed 3 out of 3 cases
 
 The AI system still behaves meaningfully without the API because the fallback generator uses retrieved context and records why it was used.
 
+## Step Completion Checklist
+
+- **Step 1: Functionality** - Completed with integrated Gemini RAG, local retrieval, JSON generation, fallback behavior, logging, and guardrails in the main CLI workflow.
+- **Step 2: Architecture** - Completed with `assets/system_architecture.svg`, showing the CLI, scorer, retriever, generator, guardrails, evaluator, and data flow.
+- **Step 3: README** - Completed with original project scope, summary, architecture, setup, sample interactions, design decisions, testing, reflection, and limitations.
+- **Step 4: Reliability** - Completed with unit tests, profile validation, confidence scores, fallback generation, guardrails, and `scripts/evaluate_recommender.py`.
+- **Step 5: Ethics and Reflection** - Completed in this README and `model_card.md`, including limitations, misuse risk, reliability surprises, and AI collaboration notes.
+- **Step 6: Stretch Features** - Completed selected optional stretch work: custom local RAG knowledge base and a pass/fail evaluation script. Live web search and fine-tuning are documented as future work rather than included in this reproducible version.
+
 ## Reflection
 
 This project taught me that an AI feature is more trustworthy when it has boundaries. The original recommender was easy to explain because it was deterministic, so I preserved that strength and used Gemini only for the natural-language explanation layer. The guardrails helped make the system honest: it should cite local context, avoid live-web claims, and keep running when a model response is malformed or unavailable.
+
+What surprised me most during reliability testing was that the fallback mode still produced useful recommendations when Gemini was unavailable. That made the system more dependable than a model-only demo, because the scorer and retriever can still explain decisions from local evidence.
 
 AI collaboration was useful for turning a class rubric into an implementation plan with separate modules and testable responsibilities. A flawed suggestion would have been to make the app read the Gemini key from `document.md`; that would have been convenient locally but unsafe and hard to reproduce. The final design uses an environment variable instead.
 
