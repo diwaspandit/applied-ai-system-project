@@ -4,7 +4,7 @@
 
 This project extends my original **Music Recommender Simulation** into a small applied AI system. The original project ranked songs from a CSV catalog using transparent content-based scoring: genre, mood, target energy, and acoustic preference. The new version keeps that scoring logic, then adds retrieval-augmented generation so each recommendation includes a grounded explanation, citations, confidence, guardrail notes, and an evaluation summary.
 
-The result is **VibeFinder**, a CLI-first recommender that can be run reproducibly with or without a Gemini API key. When `GEMINI_API_KEY` is present, Gemini generates JSON explanations from retrieved local context. When the key or SDK is unavailable, the app falls back to a deterministic local generator and logs the reason.
+The result is **VibeFinder**, a CLI-first recommender that can be run reproducibly with or without a Gemini API key. When `GEMINI_API_KEY` is present, Gemini generates JSON explanations from retrieved local context. When the key or SDK is unavailable, the app falls back to a deterministic local generator and logs the reason. The CLI also includes an observable agent workflow that plans the recommendation process, calls the RAG tool, self-checks the outputs, and prints the trace.
 
 ## Architecture Overview
 
@@ -15,10 +15,11 @@ The system has five main parts:
 - `src/recommender.py` loads songs and ranks them with deterministic scoring.
 - `data/music_knowledge.csv` stores fictional song and artist facts for retrieval.
 - `src/rag.py` retrieves relevant facts, builds a constrained prompt, calls Gemini through a `TextGenerator` boundary, parses JSON, and applies guardrails.
+- `src/agent.py` plans the recommendation workflow, calls the RAG assistant as a tool, checks grounding/citation/confidence criteria, and returns an observable trace.
 - `src/main.py` runs the end-to-end CLI demo.
 - `src/evaluation.py` and `scripts/evaluate_recommender.py` run pass/fail reliability checks across predefined profiles.
 
-Data flow: user profile -> scoring recommender -> local fact retriever -> Gemini or fallback generator -> JSON parser and guardrails -> grounded recommendation output.
+Data flow: user profile -> agent planner -> scoring recommender -> local fact retriever -> Gemini or fallback generator -> JSON parser and guardrails -> agent self-check -> grounded recommendation output.
 
 ## Setup Instructions
 
@@ -81,6 +82,23 @@ Input profile:
 Example output:
 
 ```text
+Agent workflow trace:
+1. [PASSED] Plan workflow
+   Tool: agent_planner
+   Observation: Prepared a five-step recommendation workflow.
+2. [PASSED] Validate profile
+   Tool: profile_validator
+   Observation: Profile was valid with no corrections.
+3. [PASSED] Call RAG recommender
+   Tool: recommendation_assistant
+   Observation: Generated 3 candidates: Library Rain, Midnight Coding, Spacewalk Thoughts.
+4. [PASSED] Self-check recommendations
+   Tool: grounding_checker
+   Observation: PASS Library Rain passed grounding checks; PASS Midnight Coding passed grounding checks; PASS Spacewalk Thoughts passed grounding checks
+5. [PASSED] Finalize answer
+   Tool: agent_decider
+   Observation: Agent accepted 3 of 3 generated candidates.
+
 Library Rain by Paper Lanterns - Score: 11.54
 Ranking signals: mood match (+3.0), genre match (+1.0), energy close to target (+5.8), matches acoustic preference (+1.7)
 RAG explanation: Library Rain fits because the deterministic score and local catalog facts both point to a calm, acoustic lofi match.
@@ -140,6 +158,7 @@ Guardrails: GEMINI_API_KEY is not set
 ## Design Decisions
 
 - I kept deterministic ranking separate from RAG explanation. This follows single responsibility: `recommender.py` scores songs, while `rag.py` handles retrieval, prompting, generation, parsing, and guardrails.
+- I added `src/agent.py` as a separate workflow layer instead of mixing planning and self-checking into the recommender. This keeps the agent open for new tools while leaving the existing scorer and RAG assistant unchanged.
 - I used a `TextGenerator` protocol so Gemini can be replaced by a fake generator in tests or by another provider later without changing the recommendation pipeline.
 - I used local fictional facts instead of real artist facts because the song catalog is fictional. That keeps citations honest and avoids pretending the system knows real-world details.
 - I deferred live web search. The current system explicitly says not to claim live web access, which is safer for a reproducible classroom demo.
@@ -156,13 +175,14 @@ The test suite covers the original recommender plus new RAG behavior:
 - malformed JSON fallback
 - live-web claim cleanup
 - full assistant pipeline
+- agent planning, tool-call trace, self-check pass/fail behavior, and fallback decision behavior
 - evaluation summary behavior
 
 Current verification:
 
 ```text
 pytest -q
-16 passed
+19 passed
 ```
 
 Evaluation script result without a Gemini key:
@@ -176,12 +196,12 @@ The AI system still behaves meaningfully without the API because the fallback ge
 
 ## Step Completion Checklist
 
-- **Step 1: Functionality** - Completed with integrated Gemini RAG, local retrieval, JSON generation, fallback behavior, logging, and guardrails in the main CLI workflow.
-- **Step 2: Architecture** - Completed with `assets/system_architecture.svg`, showing the CLI, scorer, retriever, generator, guardrails, evaluator, and data flow.
+- **Step 1: Functionality** - Completed with integrated Gemini RAG, local retrieval, JSON generation, fallback behavior, logging, guardrails, and an observable agent workflow in the main CLI.
+- **Step 2: Architecture** - Completed with `assets/system_architecture.svg`, showing the CLI, agent planner, scorer, retriever, generator, guardrails, evaluator, and data flow.
 - **Step 3: README** - Completed with original project scope, summary, architecture, setup, sample interactions, design decisions, testing, reflection, and limitations.
 - **Step 4: Reliability** - Completed with unit tests, profile validation, confidence scores, fallback generation, guardrails, and `scripts/evaluate_recommender.py`.
 - **Step 5: Ethics and Reflection** - Completed in this README and `model_card.md`, including limitations, misuse risk, reliability surprises, and AI collaboration notes.
-- **Step 6: Stretch Features** - Completed selected optional stretch work: custom local RAG knowledge base and a pass/fail evaluation script. Live web search and fine-tuning are documented as future work rather than included in this reproducible version.
+- **Step 6: Stretch Features** - Completed custom local RAG knowledge, an observable agentic workflow, and a pass/fail evaluation script. Fine-tuning is not implemented and is documented as future work.
 
 ## Reflection
 
@@ -196,4 +216,5 @@ AI collaboration was useful for turning a class rubric into an implementation pl
 - The catalog and knowledge base are tiny, so retrieval quality is limited.
 - The facts are fictional and manually written, so they are useful for the demo but not a real music database.
 - Confidence is a lightweight reliability signal, not a statistically calibrated probability.
-- A future stretch version could add a web-search agent for new releases, but it should clearly separate live results from local catalog facts and include source validation.
+- A future version could add live web search for new releases, but it should clearly separate live results from local catalog facts and include source validation.
+- Fine-tuning is not implemented; a future specialization experiment could compare the current structured prompt against a few-shot or fine-tuned explanation style.

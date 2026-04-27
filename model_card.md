@@ -8,7 +8,7 @@
 
 VibeFinder recommends songs from a small classroom catalog based on a user's preferred genre, mood, energy level, and acoustic preference. It is intended for portfolio and learning use, not for production music discovery or real user profiling.
 
-The new AI behavior is explanation generation. The system first ranks songs with deterministic scoring, retrieves local fictional facts about the recommended songs, and then asks Gemini to produce a grounded JSON explanation. If Gemini is unavailable, a deterministic fallback generator explains the recommendation from the same retrieved context.
+The new AI behavior is explanation generation plus an observable agent workflow. The system first plans the recommendation steps, ranks songs with deterministic scoring, retrieves local fictional facts about the recommended songs, and then asks Gemini to produce a grounded JSON explanation. If Gemini is unavailable, a deterministic fallback generator explains the recommendation from the same retrieved context.
 
 ## 3. How the System Works
 
@@ -21,6 +21,8 @@ The recommender scores each song using:
 
 The RAG layer then retrieves song and artist facts from `data/music_knowledge.csv`. The generator is instructed to use only those facts, return JSON, include citations, and avoid claiming live web access. The output parser validates confidence, citations, empty answers, malformed JSON, and unsupported web-search claims.
 
+The agent layer records intermediate steps: planning, profile validation, the RAG tool call, grounding self-check, fallback decision when needed, and final answer selection. This makes the workflow auditable instead of hiding the AI process behind one response.
+
 ## 4. Data
 
 The catalog contains 18 fictional songs in `data/songs.csv`. The RAG knowledge base contains 22 local facts about the fictional songs and artists. Genres include pop, lofi, rock, ambient, jazz, synthwave, country, hip hop, classical, reggae, metal, folk, EDM, and R&B.
@@ -32,6 +34,7 @@ Because the data is small and fictional, it is useful for demonstrating architec
 - The scoring logic is transparent and easy to test.
 - The RAG layer gives explanations that are grounded in local facts instead of unsupported general claims.
 - The generator boundary supports Gemini in normal use and fake/local generators in tests.
+- The agent trace shows which tools were used and whether outputs passed grounding checks.
 - The CLI and evaluation script run even without an API key, which makes the project reproducible.
 
 ## 6. Limitations and Bias
@@ -49,13 +52,14 @@ Reliability mechanisms include:
 - clipping for out-of-range energy values
 - fallback generation when Gemini is unavailable or returns malformed output
 - citation checks and live-web claim cleanup
+- observable agent planning/tool/self-check traces
 - an evaluation script with three predefined profiles
 
 Current local result:
 
 ```text
 pytest -q
-16 passed
+19 passed
 
 python scripts/evaluate_recommender.py
 Passed 3 out of 3 cases
@@ -74,6 +78,7 @@ The main misuse risk is presenting a small classroom demo as a real recommendati
 - Add richer user preference fields such as language, era, lyrical theme, or listening context.
 - Improve confidence scoring with measured retrieval coverage instead of a simple heuristic.
 - Add generated comparison explanations that show why a runner-up was not selected.
+- Add a specialization experiment or fine-tuning comparison; this project currently uses structured prompting, not fine-tuning.
 
 ## 10. AI Collaboration Reflection
 
