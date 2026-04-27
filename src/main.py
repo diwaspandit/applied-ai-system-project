@@ -1,18 +1,29 @@
-"""
-Command line runner for the Music Recommender Simulation.
-
-This file helps you quickly run and test your recommender.
-
-You will implement the functions in recommender.py:
-- load_songs
-- score_song
-- recommend_songs
-"""
+"""Command line runner for the Gemini RAG Music Recommender."""
 
 try:
-    from .recommender import load_songs, recommend_songs
+    from .rag import (
+        KnowledgeRetriever,
+        RecommendationResult,
+        build_default_generator,
+        load_knowledge_facts,
+    )
+    from .recommender import load_songs
 except ImportError:
-    from recommender import load_songs, recommend_songs
+    from rag import (
+        KnowledgeRetriever,
+        RecommendationResult,
+        build_default_generator,
+        load_knowledge_facts,
+    )
+    from recommender import load_songs
+
+from pathlib import Path
+import logging
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SONGS_PATH = PROJECT_ROOT / "data" / "songs.csv"
+KNOWLEDGE_PATH = PROJECT_ROOT / "data" / "music_knowledge.csv"
 
 
 USER_PREFERENCE_PROFILES = {
@@ -37,24 +48,53 @@ USER_PREFERENCE_PROFILES = {
 }
 
 
+def _format_result(result: RecommendationResult) -> str:
+    citations = ", ".join(result.generated.citations) or "no citations"
+    guardrails = (
+        "; ".join(result.generated.guardrail_notes)
+        if result.generated.guardrail_notes
+        else "none"
+    )
+    return (
+        f"{result.song['title']} by {result.song['artist']} - Score: {result.score:.2f}\n"
+        f"Ranking signals: {result.score_explanation}\n"
+        f"RAG explanation: {result.generated.answer}\n"
+        f"Confidence: {result.generated.confidence:.2f} | Generator: {result.generator_name}\n"
+        f"Citations: {citations}\n"
+        f"Guardrails: {guardrails}\n"
+    )
+
+
 def main() -> None:
-    songs = load_songs("data/songs.csv")
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
+    songs = load_songs(str(SONGS_PATH))
+    facts = load_knowledge_facts(str(KNOWLEDGE_PATH))
+    generator = build_default_generator()
+    retriever = KnowledgeRetriever(facts)
+
     print(f"Loaded songs: {len(songs)}")
+    print(f"Loaded knowledge facts: {len(facts)}")
 
     selected_profile = "Chill Lofi"
     user_prefs = USER_PREFERENCE_PROFILES[selected_profile]
     print(f"Using profile: {selected_profile}")
 
-    recommendations = recommend_songs(user_prefs, songs, k=5)
+    try:
+        from .rag import RecommendationAssistant
+    except ImportError:
+        from rag import RecommendationAssistant
 
-    print("\nTop recommendations:\n")
-    for rec in recommendations:
-        # You decide the structure of each returned item.
-        # A common pattern is: (song, score, explanation)
-        song, score, explanation = rec
-        print(f"{song['title']} - Score: {score:.2f}")
-        print(f"Because: {explanation}")
-        print()
+    assistant = RecommendationAssistant(
+        songs=songs,
+        retriever=retriever,
+        generator=generator,
+    )
+    recommendations = assistant.recommend(user_prefs, k=3)
+
+    print("\nTop grounded recommendations:\n")
+    for result in recommendations:
+        print(_format_result(result))
 
 
 if __name__ == "__main__":
