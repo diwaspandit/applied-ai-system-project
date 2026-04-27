@@ -1,6 +1,7 @@
 """Command line runner for the Gemini RAG Music Recommender."""
 
 try:
+    from .agent import AgentRun, AgentStep, AgenticMusicAgent
     from .rag import (
         KnowledgeRetriever,
         RecommendationResult,
@@ -9,6 +10,7 @@ try:
     )
     from .recommender import load_songs
 except ImportError:
+    from agent import AgentRun, AgentStep, AgenticMusicAgent
     from rag import (
         KnowledgeRetriever,
         RecommendationResult,
@@ -65,6 +67,20 @@ def _format_result(result: RecommendationResult) -> str:
     )
 
 
+def _format_agent_step(step: AgentStep) -> str:
+    return (
+        f"{step.number}. [{step.status.upper()}] {step.name}\n"
+        f"   Tool: {step.tool}\n"
+        f"   Action: {step.action}\n"
+        f"   Observation: {step.observation}"
+    )
+
+
+def _format_agent_run(agent_run: AgentRun) -> str:
+    trace = "\n".join(_format_agent_step(step) for step in agent_run.steps)
+    return f"{trace}\n\nAgent summary: {agent_run.summary}"
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
 
@@ -90,10 +106,14 @@ def main() -> None:
         retriever=retriever,
         generator=generator,
     )
-    recommendations = assistant.recommend(user_prefs, k=3)
+    agent = AgenticMusicAgent(assistant)
+    agent_run = agent.run(user_prefs, k=3)
+
+    print("\nAgent workflow trace:\n")
+    print(_format_agent_run(agent_run))
 
     print("\nTop grounded recommendations:\n")
-    for result in recommendations:
+    for result in agent_run.recommendations:
         print(_format_result(result))
 
 
