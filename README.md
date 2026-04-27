@@ -10,7 +10,7 @@ The result is **VibeFinder**, a recommender that can be run reproducibly with or
 
 ![System architecture](assets/system_architecture.svg)
 
-The system has five main parts:
+The system has these main parts:
 
 - `src/recommender.py` loads songs and ranks them with deterministic scoring.
 - `data/music_knowledge.csv` stores fictional song and artist facts for retrieval.
@@ -18,6 +18,7 @@ The system has five main parts:
 - `src/agent.py` plans the recommendation workflow, calls the RAG assistant as a tool, checks grounding/citation/confidence criteria, and returns an observable trace.
 - `src/main.py` runs the end-to-end CLI demo.
 - `streamlit_app.py` renders the same agent workflow in a browser UI with profile controls, recommendations, trace, and catalog views.
+- `src/ui_helpers.py` keeps UI-only formatting and profile-building helpers separate from the recommendation logic.
 - `src/evaluation.py` and `scripts/evaluate_recommender.py` run pass/fail reliability checks across predefined profiles.
 
 Data flow: user profile -> agent planner -> scoring recommender -> local fact retriever -> Gemini or fallback generator -> JSON parser and guardrails -> agent self-check -> grounded recommendation output.
@@ -183,13 +184,14 @@ The test suite covers the original recommender plus new RAG behavior:
 - live-web claim cleanup
 - full assistant pipeline
 - agent planning, tool-call trace, self-check pass/fail behavior, and fallback decision behavior
+- Streamlit dashboard rendering and UI helper behavior
 - evaluation summary behavior
 
 Current verification:
 
 ```text
 pytest -q
-19 passed
+25 passed
 ```
 
 Evaluation script result without a Gemini key:
@@ -201,6 +203,8 @@ Passed 3 out of 3 cases
 
 The AI system still behaves meaningfully without the API because the fallback generator uses retrieved context and records why it was used.
 
+RAG impact compared with the original baseline: the earlier recommender only returned score reasons such as mood, genre, energy, and acoustic fit. The upgraded system retrieves song and artist context from `data/music_knowledge.csv`, adds citations, and checks that grounded context appears before accepting results.
+
 ## Step Completion Checklist
 
 - **Step 1: Functionality** - Completed with integrated Gemini RAG, local retrieval, JSON generation, fallback behavior, logging, guardrails, and an observable agent workflow in the CLI and Streamlit UI.
@@ -208,7 +212,7 @@ The AI system still behaves meaningfully without the API because the fallback ge
 - **Step 3: README** - Completed with original project scope, summary, architecture, setup, sample interactions, design decisions, testing, reflection, and limitations.
 - **Step 4: Reliability** - Completed with unit tests, profile validation, confidence scores, fallback generation, guardrails, and `scripts/evaluate_recommender.py`.
 - **Step 5: Ethics and Reflection** - Completed in this README and `model_card.md`, including limitations, misuse risk, reliability surprises, and AI collaboration notes.
-- **Step 6: Stretch Features** - Completed custom local RAG knowledge, an observable agentic workflow, and a pass/fail evaluation script. Fine-tuning is not implemented and is documented as future work.
+- **Step 6: Stretch Features** - Completed custom local RAG knowledge, an observable agentic workflow, and a pass/fail evaluation script. The Streamlit UI is also available for demo polish. Fine-tuning is not implemented and is documented as future work.
 
 ## Reflection
 

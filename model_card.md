@@ -53,13 +53,14 @@ Reliability mechanisms include:
 - fallback generation when Gemini is unavailable or returns malformed output
 - citation checks and live-web claim cleanup
 - observable agent planning/tool/self-check traces
+- Streamlit UI smoke testing
 - an evaluation script with three predefined profiles
 
 Current local result:
 
 ```text
 pytest -q
-19 passed
+25 passed
 
 python scripts/evaluate_recommender.py
 Passed 3 out of 3 cases
