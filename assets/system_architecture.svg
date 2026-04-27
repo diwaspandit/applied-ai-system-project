@@ -20,10 +20,10 @@
 
   <rect class="bg" width="1120" height="680" />
   <text x="56" y="54" class="text" style="font-size: 28px;">Gemini RAG Music Recommender</text>
-  <text x="56" y="82" class="small">CLI workflow with agent planning, local retrieval, Gemini JSON generation, deterministic fallback, and reliability checks.</text>
+  <text x="56" y="82" class="small">CLI and Streamlit workflows with agent planning, local retrieval, Gemini JSON generation, fallback, and reliability checks.</text>
 
   <rect x="60" y="130" width="210" height="100" class="box" />
-  <text x="88" y="166" class="text">CLI User Profile</text>
+  <text x="88" y="166" class="text">CLI or Streamlit UI</text>
   <text x="88" y="194" class="small">genre, mood, energy,</text>
   <text x="88" y="214" class="small">acoustic preference</text>
 

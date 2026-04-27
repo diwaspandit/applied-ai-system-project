@@ -6,7 +6,7 @@
 
 ## 2. Intended Use
 
-VibeFinder recommends songs from a small classroom catalog based on a user's preferred genre, mood, energy level, and acoustic preference. It is intended for portfolio and learning use, not for production music discovery or real user profiling.
+VibeFinder recommends songs from a small classroom catalog based on a user's preferred genre, mood, energy level, and acoustic preference. It is intended for portfolio and learning use, not for production music discovery or real user profiling. It can be used from either the CLI or the Streamlit browser UI.
 
 The new AI behavior is explanation generation plus an observable agent workflow. The system first plans the recommendation steps, ranks songs with deterministic scoring, retrieves local fictional facts about the recommended songs, and then asks Gemini to produce a grounded JSON explanation. If Gemini is unavailable, a deterministic fallback generator explains the recommendation from the same retrieved context.
 
@@ -35,7 +35,7 @@ Because the data is small and fictional, it is useful for demonstrating architec
 - The RAG layer gives explanations that are grounded in local facts instead of unsupported general claims.
 - The generator boundary supports Gemini in normal use and fake/local generators in tests.
 - The agent trace shows which tools were used and whether outputs passed grounding checks.
-- The CLI and evaluation script run even without an API key, which makes the project reproducible.
+- The CLI, Streamlit UI, and evaluation script run even without an API key, which makes the project reproducible.
 
 ## 6. Limitations and Bias
 

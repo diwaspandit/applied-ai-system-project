@@ -4,7 +4,7 @@
 
 This project extends my original **Music Recommender Simulation** into a small applied AI system. The original project ranked songs from a CSV catalog using transparent content-based scoring: genre, mood, target energy, and acoustic preference. The new version keeps that scoring logic, then adds retrieval-augmented generation so each recommendation includes a grounded explanation, citations, confidence, guardrail notes, and an evaluation summary.
 
-The result is **VibeFinder**, a CLI-first recommender that can be run reproducibly with or without a Gemini API key. When `GEMINI_API_KEY` is present, Gemini generates JSON explanations from retrieved local context. When the key or SDK is unavailable, the app falls back to a deterministic local generator and logs the reason. The CLI also includes an observable agent workflow that plans the recommendation process, calls the RAG tool, self-checks the outputs, and prints the trace.
+The result is **VibeFinder**, a recommender that can be run reproducibly with or without a Gemini API key. When `GEMINI_API_KEY` is present, Gemini generates JSON explanations from retrieved local context. When the key or SDK is unavailable, the app falls back to a deterministic local generator and logs the reason. The CLI and Streamlit UI both expose the agent workflow that plans the recommendation process, calls the RAG tool, self-checks the outputs, and shows the trace.
 
 ## Architecture Overview
 
@@ -17,6 +17,7 @@ The system has five main parts:
 - `src/rag.py` retrieves relevant facts, builds a constrained prompt, calls Gemini through a `TextGenerator` boundary, parses JSON, and applies guardrails.
 - `src/agent.py` plans the recommendation workflow, calls the RAG assistant as a tool, checks grounding/citation/confidence criteria, and returns an observable trace.
 - `src/main.py` runs the end-to-end CLI demo.
+- `streamlit_app.py` renders the same agent workflow in a browser UI with profile controls, recommendations, trace, and catalog views.
 - `src/evaluation.py` and `scripts/evaluate_recommender.py` run pass/fail reliability checks across predefined profiles.
 
 Data flow: user profile -> agent planner -> scoring recommender -> local fact retriever -> Gemini or fallback generator -> JSON parser and guardrails -> agent self-check -> grounded recommendation output.
@@ -50,13 +51,19 @@ Data flow: user profile -> agent planner -> scoring recommender -> local fact re
    python -m src.main
    ```
 
-5. Run tests.
+5. Run the Streamlit UI.
+
+   ```bash
+   streamlit run streamlit_app.py
+   ```
+
+6. Run tests.
 
    ```bash
    pytest -q
    ```
 
-6. Run the reliability evaluation script.
+7. Run the reliability evaluation script.
 
    ```bash
    python scripts/evaluate_recommender.py
@@ -196,8 +203,8 @@ The AI system still behaves meaningfully without the API because the fallback ge
 
 ## Step Completion Checklist
 
-- **Step 1: Functionality** - Completed with integrated Gemini RAG, local retrieval, JSON generation, fallback behavior, logging, guardrails, and an observable agent workflow in the main CLI.
-- **Step 2: Architecture** - Completed with `assets/system_architecture.svg`, showing the CLI, agent planner, scorer, retriever, generator, guardrails, evaluator, and data flow.
+- **Step 1: Functionality** - Completed with integrated Gemini RAG, local retrieval, JSON generation, fallback behavior, logging, guardrails, and an observable agent workflow in the CLI and Streamlit UI.
+- **Step 2: Architecture** - Completed with `assets/system_architecture.svg`, showing the CLI/UI, agent planner, scorer, retriever, generator, guardrails, evaluator, and data flow.
 - **Step 3: README** - Completed with original project scope, summary, architecture, setup, sample interactions, design decisions, testing, reflection, and limitations.
 - **Step 4: Reliability** - Completed with unit tests, profile validation, confidence scores, fallback generation, guardrails, and `scripts/evaluate_recommender.py`.
 - **Step 5: Ethics and Reflection** - Completed in this README and `model_card.md`, including limitations, misuse risk, reliability surprises, and AI collaboration notes.
