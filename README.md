@@ -1,282 +1,168 @@
-# 🎵 Music Recommender Simulation
+# Gemini RAG Music Recommender
 
-## Project Summary
+## Title and Summary
 
-In this project you will build and explain a small music recommender system.
+This project extends my original **Music Recommender Simulation** into a small applied AI system. The original project ranked songs from a CSV catalog using transparent content-based scoring: genre, mood, target energy, and acoustic preference. The new version keeps that scoring logic, then adds retrieval-augmented generation so each recommendation includes a grounded explanation, citations, confidence, guardrail notes, and an evaluation summary.
 
-Your goal is to:
+The result is **VibeFinder**, a CLI-first recommender that can be run reproducibly with or without a Gemini API key. When `GEMINI_API_KEY` is present, Gemini generates JSON explanations from retrieved local context. When the key or SDK is unavailable, the app falls back to a deterministic local generator and logs the reason.
 
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
+## Architecture Overview
 
-Real-world recommendation systems usually combine many signals at once: a user's past behavior, patterns from similar users, content features like genre or mood, and a ranking step that decides what to show first. My version is a much smaller, more transparent content-based simulation. Instead of learning from millions of listeners, it will prioritize musical "vibe" by rewarding mood and genre matches, songs whose energy is close to the user's target, and whether the song fits the user's acoustic preference.
+![System architecture](assets/system_architecture.svg)
 
----
+The system has five main parts:
 
-## How The System Works
+- `src/recommender.py` loads songs and ranks them with deterministic scoring.
+- `data/music_knowledge.csv` stores fictional song and artist facts for retrieval.
+- `src/rag.py` retrieves relevant facts, builds a constrained prompt, calls Gemini through a `TextGenerator` boundary, parses JSON, and applies guardrails.
+- `src/main.py` runs the end-to-end CLI demo.
+- `src/evaluation.py` and `scripts/evaluate_recommender.py` run pass/fail reliability checks across predefined profiles.
 
-This simulation uses a simple content-based recommender that compares each song's features to a small user taste profile and then ranks the best matches.
+Data flow: user profile -> scoring recommender -> local fact retriever -> Gemini or fallback generator -> JSON parser and guardrails -> grounded recommendation output.
 
-`Song` features used in the simulation:
-- `id`
-- `title`
-- `artist`
-- `genre`
-- `mood`
-- `energy`
-- `tempo_bpm`
-- `valence`
-- `danceability`
-- `acousticness`
+## Setup Instructions
 
-`UserProfile` features used in the simulation:
-- `favorite_genre`
-- `favorite_mood`
-- `target_energy`
-- `likes_acoustic`
+1. Create and activate a virtual environment.
 
-Example taste profile dictionary:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+2. Install dependencies.
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Optional: set a Gemini API key.
+
+   ```bash
+   export GEMINI_API_KEY="your-key-here"
+   ```
+
+   The project never reads secrets from `document.md`. If the environment variable is missing, the CLI still runs with the local fallback generator.
+
+4. Run the main app.
+
+   ```bash
+   python -m src.main
+   ```
+
+5. Run tests.
+
+   ```bash
+   pytest -q
+   ```
+
+6. Run the reliability evaluation script.
+
+   ```bash
+   python scripts/evaluate_recommender.py
+   ```
+
+## Sample Interactions
+
+### Chill Lofi Profile
+
+Input profile:
 
 ```python
-user_prefs = {
+{
     "favorite_genre": "lofi",
-    "favorite_mood": "focused",
-    "target_energy": 0.40,
+    "favorite_mood": "chill",
+    "target_energy": 0.38,
     "likes_acoustic": True,
 }
 ```
 
-The recommender gives points when a song matches the user's favorite genre and mood, rewards songs whose `energy` is closer to the user's target energy, and can add a smaller bonus when the song's `acousticness` fits the user's acoustic preference. After every song gets a score, the system sorts the songs from highest to lowest score and recommends the top `k` songs.
+Example output:
 
-Algorithm recipe:
-- Read the user's taste profile from `user_prefs`
-- Load every song from `data/songs.csv`
-- For each song, calculate a score using:
-  - `+3` points if the mood matches
-  - `+2` points if the genre matches
-  - up to `+3` points for energy closeness using `1 - abs(song_energy - target_energy)`
-  - up to `+2` points for acoustic fit
-- Save each song with its final score
-- Sort all songs from highest score to lowest score
-- Return the top `k` songs as recommendations
-
-In this design, mood is weighted slightly more than genre because the system is trying to match overall vibe, not just musical category. A song from a different genre can still feel right if it matches the user's mood and energy.
-
-Potential bias note:
-- This system might over-prioritize exact mood or genre labels and miss good songs that feel similar in other ways.
-- It may also over-recommend acoustic songs for users with `likes_acoustic = True`, even when a less acoustic track matches the mood better.
-- Because the catalog is small, underrepresented genres and moods may appear less often in the final recommendations.
-
-Sample recommendation output:
-
-![Recommendation output](screenshots/recommendation_output.png)
-
----
-
-## Getting Started
-
-### Setup
-
-1. Create a virtual environment (optional but recommended):
-
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
-
-2. Install dependencies
-
-```bash
-pip install -r requirements.txt
+```text
+Library Rain by Paper Lanterns - Score: 11.54
+Ranking signals: mood match (+3.0), genre match (+1.0), energy close to target (+5.8), matches acoustic preference (+1.7)
+RAG explanation: Library Rain fits because the deterministic score and local catalog facts both point to a calm, acoustic lofi match.
+Confidence: 0.62 | Generator: local-fallback
+Citations: local fictional catalog notes
+Guardrails: GEMINI_API_KEY is not set
 ```
 
-3. Run the app:
+### High-Energy Pop Profile
 
-```bash
-python -m src.main
+Input profile:
+
+```python
+{
+    "favorite_genre": "pop",
+    "favorite_mood": "happy",
+    "target_energy": 0.85,
+    "likes_acoustic": False,
+}
 ```
 
-### Running Tests
+Expected behavior: `Sunrise City` is recommended near the top because it matches happy pop, high energy, and less-acoustic production. The RAG layer cites local facts about Neon Echo and the song's upbeat electronic-pop style.
 
-Run the starter tests with:
+### Deep Intense Rock Profile
 
-```bash
-pytest
+Input profile:
+
+```python
+{
+    "favorite_genre": "rock",
+    "favorite_mood": "intense",
+    "target_energy": 0.90,
+    "likes_acoustic": False,
+}
 ```
 
-You can add more tests in `tests/test_recommender.py`.
+Expected behavior: `Storm Runner` is recommended because the scoring layer sees a strong rock, intense, high-energy match, and the retriever supplies facts about Voltline's driving tempo and sharp-guitar catalog identity.
 
----
+## Design Decisions
 
-## Experiments You Tried
+- I kept deterministic ranking separate from RAG explanation. This follows single responsibility: `recommender.py` scores songs, while `rag.py` handles retrieval, prompting, generation, parsing, and guardrails.
+- I used a `TextGenerator` protocol so Gemini can be replaced by a fake generator in tests or by another provider later without changing the recommendation pipeline.
+- I used local fictional facts instead of real artist facts because the song catalog is fictional. That keeps citations honest and avoids pretending the system knows real-world details.
+- I deferred live web search. The current system explicitly says not to claim live web access, which is safer for a reproducible classroom demo.
 
-Use this section to document the experiments you ran. For example:
+## Testing Summary
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+The test suite covers the original recommender plus new RAG behavior:
 
-## Adversarial Profile Runs
+- loading and ranking catalog facts
+- prompt construction
+- Gemini client boundary with a fake client
+- deterministic fallback generation
+- profile validation guardrails
+- malformed JSON fallback
+- live-web claim cleanup
+- full assistant pipeline
+- evaluation summary behavior
 
-I also tested several adversarial or edge-case user profiles to see whether the scoring logic could be pushed into unexpected recommendations. Each screenshot below shows the top 5 results printed in the terminal.
+Current verification:
 
-### `Sad Sprint Pop`
+```text
+pytest -q
+16 passed
+```
 
-Conflicting preferences: high energy pop with a `sad` mood label that does not appear in the dataset.
+Evaluation script result without a Gemini key:
 
-![Sad Sprint Pop terminal output](screenshots/sad-sprint-pop.png)
+```text
+Reliability evaluation
+Passed 3 out of 3 cases
+```
 
-### `Peaceful Mosh Pit`
-
-Conflicting preferences: peaceful acoustic rock with very high target energy.
-
-![Peaceful Mosh Pit terminal output](screenshots/peaceful-mosh-pit.png)
-
-### `Acoustic Metal Campfire`
-
-Conflicting preferences: metal, tender mood, low energy, and strong acoustic preference.
-
-![Acoustic Metal Campfire terminal output](screenshots/acoustic-metal-campfire.png)
-
-### `Overclocked EDM`
-
-Edge-case input: an out-of-range `target_energy` value of `1.50`.
-
-![Overclocked EDM terminal output](screenshots/overclocked-edm.png)
-
----
-
-## Limitations and Risks
-
-Summarize some limitations of your recommender.
-
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
-
----
+The AI system still behaves meaningfully without the API because the fallback generator uses retrieved context and records why it was used.
 
 ## Reflection
 
-Read and complete `model_card.md`:
+This project taught me that an AI feature is more trustworthy when it has boundaries. The original recommender was easy to explain because it was deterministic, so I preserved that strength and used Gemini only for the natural-language explanation layer. The guardrails helped make the system honest: it should cite local context, avoid live-web claims, and keep running when a model response is malformed or unavailable.
 
-[**Model Card**](model_card.md)
+AI collaboration was useful for turning a class rubric into an implementation plan with separate modules and testable responsibilities. A flawed suggestion would have been to make the app read the Gemini key from `document.md`; that would have been convenient locally but unsafe and hard to reproduce. The final design uses an environment variable instead.
 
-Write 1 to 2 paragraphs here about what you learned:
+## Limitations and Future Work
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
-
----
-
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
-
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
-
----
-
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
-
----
-
-## 7. Evaluation
-
-How did you check your system
-
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
-
-You do not need a numeric metric, but if you used one, explain what it measures.
-
----
-
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
-
----
-
-## 9. Personal Reflection
-
-A few sentences about what you learned:
-
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
+- The catalog and knowledge base are tiny, so retrieval quality is limited.
+- The facts are fictional and manually written, so they are useful for the demo but not a real music database.
+- Confidence is a lightweight reliability signal, not a statistically calibrated probability.
+- A future stretch version could add a web-search agent for new releases, but it should clearly separate live results from local catalog facts and include source validation.

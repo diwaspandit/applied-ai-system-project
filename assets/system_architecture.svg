@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="680" viewBox="0 0 1120 680" role="img" aria-labelledby="title desc">
+  <title id="title">Gemini RAG Music Recommender Architecture</title>
+  <desc id="desc">Data flows from a CLI user profile through scoring, retrieval, generation, guardrails, and evaluation.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#263238" />
+    </marker>
+    <style>
+      .bg { fill: #f7faf9; }
+      .box { fill: #ffffff; stroke: #263238; stroke-width: 2; rx: 8; }
+      .data { fill: #e7f0ff; stroke: #244a8f; }
+      .ai { fill: #fff2d6; stroke: #8a5a00; }
+      .guard { fill: #e9f7ef; stroke: #1d6b3a; }
+      .test { fill: #f2e9ff; stroke: #57328a; }
+      .text { fill: #182026; font-family: Arial, sans-serif; font-size: 18px; font-weight: 700; }
+      .small { fill: #37474f; font-family: Arial, sans-serif; font-size: 14px; font-weight: 400; }
+      .arrow { stroke: #263238; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1120" height="680" />
+  <text x="56" y="54" class="text" style="font-size: 28px;">Gemini RAG Music Recommender</text>
+  <text x="56" y="82" class="small">CLI workflow with local retrieval, Gemini JSON generation, deterministic fallback, and reliability checks.</text>
+
+  <rect x="60" y="130" width="210" height="100" class="box" />
+  <text x="88" y="166" class="text">CLI User Profile</text>
+  <text x="88" y="194" class="small">genre, mood, energy,</text>
+  <text x="88" y="214" class="small">acoustic preference</text>
+
+  <rect x="350" y="110" width="220" height="80" class="box data" />
+  <text x="392" y="146" class="text">songs.csv</text>
+  <text x="392" y="172" class="small">catalog metadata</text>
+
+  <rect x="350" y="230" width="220" height="80" class="box data" />
+  <text x="382" y="266" class="text">music_knowledge.csv</text>
+  <text x="382" y="292" class="small">fictional song facts</text>
+
+  <rect x="650" y="110" width="220" height="100" class="box" />
+  <text x="684" y="146" class="text">Scoring Recommender</text>
+  <text x="684" y="174" class="small">ranks top songs using</text>
+  <text x="684" y="194" class="small">transparent score rules</text>
+
+  <rect x="650" y="250" width="220" height="100" class="box" />
+  <text x="694" y="286" class="text">Retriever</text>
+  <text x="694" y="314" class="small">selects grounded facts</text>
+  <text x="694" y="334" class="small">for each top song</text>
+
+  <rect x="650" y="400" width="220" height="100" class="box ai" />
+  <text x="690" y="436" class="text">Gemini Generator</text>
+  <text x="690" y="464" class="small">JSON explanation from</text>
+  <text x="690" y="484" class="small">retrieved context only</text>
+
+  <rect x="910" y="400" width="160" height="100" class="box guard" />
+  <text x="942" y="436" class="text">Guardrails</text>
+  <text x="942" y="464" class="small">parse JSON, reject</text>
+  <text x="942" y="484" class="small">unsupported claims</text>
+
+  <rect x="910" y="540" width="160" height="80" class="box test" />
+  <text x="944" y="576" class="text">Evaluator</text>
+  <text x="944" y="602" class="small">pass/fail profiles</text>
+
+  <rect x="60" y="410" width="250" height="120" class="box guard" />
+  <text x="92" y="446" class="text">CLI Output</text>
+  <text x="92" y="474" class="small">ranked songs, grounded</text>
+  <text x="92" y="494" class="small">explanations, citations,</text>
+  <text x="92" y="514" class="small">confidence, guardrails</text>
+
+  <path class="arrow" d="M270 180 H350" />
+  <path class="arrow" d="M570 150 H650" />
+  <path class="arrow" d="M570 270 H650" />
+  <path class="arrow" d="M760 210 V250" />
+  <path class="arrow" d="M760 350 V400" />
+  <path class="arrow" d="M870 450 H910" />
+  <path class="arrow" d="M910 450 C760 600 420 600 310 470" />
+  <path class="arrow" d="M990 500 V540" />
+  <path class="arrow" d="M185 410 V230" />
+</svg>

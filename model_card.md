@@ -1,104 +1,80 @@
-# 🎧 Model Card: Music Recommender Simulation
+# Model Card: VibeFinder Gemini RAG Music Recommender
 
-## 1. Model Name  
+## 1. Model Name
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
+**VibeFinder Gemini RAG**
 
----
+## 2. Intended Use
 
-## 2. Intended Use  
+VibeFinder recommends songs from a small classroom catalog based on a user's preferred genre, mood, energy level, and acoustic preference. It is intended for portfolio and learning use, not for production music discovery or real user profiling.
 
-Describe what your recommender is designed to do and who it is for. 
+The new AI behavior is explanation generation. The system first ranks songs with deterministic scoring, retrieves local fictional facts about the recommended songs, and then asks Gemini to produce a grounded JSON explanation. If Gemini is unavailable, a deterministic fallback generator explains the recommendation from the same retrieved context.
 
-Prompts:  
+## 3. How the System Works
 
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+The recommender scores each song using:
 
----
+- mood match
+- genre match
+- energy closeness
+- acoustic preference fit
 
-## 3. How the Model Works  
+The RAG layer then retrieves song and artist facts from `data/music_knowledge.csv`. The generator is instructed to use only those facts, return JSON, include citations, and avoid claiming live web access. The output parser validates confidence, citations, empty answers, malformed JSON, and unsupported web-search claims.
 
-Explain your scoring approach in simple language.  
+## 4. Data
 
-Prompts:  
+The catalog contains 18 fictional songs in `data/songs.csv`. The RAG knowledge base contains 22 local facts about the fictional songs and artists. Genres include pop, lofi, rock, ambient, jazz, synthwave, country, hip hop, classical, reggae, metal, folk, EDM, and R&B.
 
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
+Because the data is small and fictional, it is useful for demonstrating architecture and reliability, but it does not represent real listener behavior or real artist histories.
 
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+## 5. Strengths
 
----
+- The scoring logic is transparent and easy to test.
+- The RAG layer gives explanations that are grounded in local facts instead of unsupported general claims.
+- The generator boundary supports Gemini in normal use and fake/local generators in tests.
+- The CLI and evaluation script run even without an API key, which makes the project reproducible.
 
-## 4. Data  
+## 6. Limitations and Bias
 
-Describe the dataset the model uses.  
+The system can over-prioritize exact labels. For example, a user who asks for a mood or genre that appears only once in the catalog has very few good options. The recommender also assumes that mood, genre, energy, and acousticness are enough to describe taste, which leaves out lyrics, culture, language, listening history, era, and user context.
 
-Prompts:  
+The local knowledge base is manually written, so it reflects the author's idea of each fictional song. If this were used on real music, the system could misrepresent artists or over-amplify popular genres unless the data source and retrieval quality were carefully audited.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+## 7. Reliability and Evaluation
 
----
+Reliability mechanisms include:
 
-## 5. Strengths  
+- unit tests for scoring, retrieval, prompt building, Gemini boundary behavior, fallback generation, guardrail parsing, and end-to-end pipeline behavior
+- validation for required profile fields
+- clipping for out-of-range energy values
+- fallback generation when Gemini is unavailable or returns malformed output
+- citation checks and live-web claim cleanup
+- an evaluation script with three predefined profiles
 
-Where does your system seem to work well  
+Current local result:
 
-Prompts:  
+```text
+pytest -q
+16 passed
 
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+python scripts/evaluate_recommender.py
+Passed 3 out of 3 cases
+```
 
----
+## 8. Misuse Risks
 
-## 6. Limitations and Bias 
+The main misuse risk is presenting a small classroom demo as a real recommendation engine. Another risk is making generated explanations sound more authoritative than the underlying data supports. To reduce that risk, the system cites local facts, labels guardrail behavior, avoids live-web claims, and keeps confidence visible.
 
-One weakness in this recommender is that it now over-prioritizes energy closeness more than genre. In my `Acoustic Metal Campfire` experiment, `Porchlight Letters`, a folk song, ranked above the metal track because its low energy and high acousticness fit the profile better, even though the genre did not match. This can create a vibe-based filter bubble where users keep getting songs with similar surface traits instead of songs from the style they actually asked for. The problem is worse because the catalog only has 18 songs and most genres and moods appear once, so users with unusual or underrepresented tastes have very few strong matches.
+## 9. Future Work
 
----
+- Add a real source-backed web-search agent for current music releases.
+- Track diversity so the top recommendations do not become too similar.
+- Add richer user preference fields such as language, era, lyrical theme, or listening context.
+- Improve confidence scoring with measured retrieval coverage instead of a simple heuristic.
+- Add generated comparison explanations that show why a runner-up was not selected.
 
-## 7. Evaluation  
+## 10. AI Collaboration Reflection
 
-How you checked whether the recommender behaved as expected. 
+AI was helpful for converting the rubric into a modular build plan: separate scoring, retrieval, generation, guardrails, evaluation, and documentation. It was also useful for identifying test cases around malformed model JSON and missing credentials.
 
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
-
-No need for numeric metrics unless you created some.
-
----
-
-## 8. Future Work  
-
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
-
----
-
-## 9. Personal Reflection  
-
-A few sentences about your experience.  
-
-Prompts:  
-
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+One flawed AI direction would have been to read the Gemini key from `document.md`. That would have made the app easier to run on one machine, but it would be a poor security practice and would couple the code to an uncommitted assignment note. The final version uses `GEMINI_API_KEY` from the environment instead.
